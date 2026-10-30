@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Café Stock Tracker</title>
+<meta name="description" content="Multi-outlet stock tracker with low-stock alerts and a combined supplier order list.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e8590c'/%3E%3Cpath d='M9 12h12v6a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z' fill='%23fff'/%3E%3Cpath d='M21 14h1.5a2.5 2.5 0 0 1 0 5H21' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --border: #e3e8ee;
+    --border-strong: #cfd7df;
+    --text: #1a2233;
+    --muted: #697386;
+    --faint: #a3acb9;
+    --accent: #e8590c;
+    --accent-hover: #cc4d0a;
+    --accent-soft: #fff1e8;
+    --accent-line: #ffd4ba;
+    --ok: #4f7a63;
+    --ok-soft: #eef4f0;
+    --danger: #b3261e;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(26,34,51,.04), 0 2px 8px rgba(26,34,51,.04);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font: inherit; color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  /* Header */
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 0 0 4px; font-weight: 700; letter-spacing: -.02em; }
+  .sub { color: var(--muted); margin: 0; }
+  .head-actions { display: flex; align-items: center; gap: 12px; }
+  .status { color: var(--muted); font-size: 15px; }
+  .status.err { color: var(--danger); }
+
+  /* Buttons */
+  .btn {
+    border: 1px solid var(--border-strong); background: var(--surface); border-radius: 10px;
+    padding: 10px 16px; font-weight: 600; font-size: 16px; cursor: pointer; white-space: nowrap;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn:focus-visible, .tab:focus-visible, .chip:focus-visible, .step:focus-visible, input:focus-visible {
+    outline: 3px solid var(--accent-line); outline-offset: 1px;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.primary:disabled { background: var(--surface); border-color: var(--border-strong); color: var(--muted); opacity: 1; }
+
+  /* KPI cards */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .kpi { padding: 20px 22px; }
+  .kpi .label { color: var(--muted); font-size: 15px; font-weight: 500; }
+  .kpi .value { font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .kpi .value.accent { color: var(--accent); }
+  .kpi .note { color: var(--muted); font-size: 15px; margin-top: 2px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
+  .tab {
+    background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 16px; margin-bottom: -1px;
+    font-weight: 600; font-size: 17px; color: var(--muted); cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  .count { font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); }
+  .tab[aria-selected="true"] .count.has-low, .count.has-low { background: var(--accent-soft); color: var(--accent); }
+
+  /* Toolbar */
+  .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 7px 14px;
+    font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer;
+  }
+  .chip:hover { color: var(--text); border-color: var(--border-strong); }
+  .chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: #fff; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 15px; cursor: pointer; user-select: none; }
+  .toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  /* Category cards */
+  .group { margin-bottom: 20px; overflow: hidden; }
+  .group-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--border); }
+  .group-head h2 { font-size: 18px; margin: 0; font-weight: 600; }
+  .group-head .meta { color: var(--muted); font-size: 15px; }
+  .cols, .row { display: grid; grid-template-columns: minmax(0, 1fr) 190px 190px 110px; gap: 16px; align-items: center; padding: 0 22px; }
+  .cols { color: var(--faint); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding-top: 12px; padding-bottom: 4px; }
+  .row { padding-top: 14px; padding-bottom: 14px; border-top: 1px solid var(--border); }
+  .cols + .row { border-top: 0; }
+  .row.low { background: linear-gradient(90deg, var(--accent-soft), transparent 55%); box-shadow: inset 3px 0 0 var(--accent); }
+  .name { font-weight: 600; font-size: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .detail { color: var(--muted); font-size: 15px; }
+  .badge { font-size: 13px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 3px 9px; border-radius: 6px; background: var(--accent); color: #fff; }
+  .badge.okb { background: var(--ok-soft); color: var(--ok); }
+  .field-label { display: none; color: var(--faint); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+
+  /* Steppers */
+  .stepper { display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); overflow: hidden; }
+  .stepper.dirty { border-color: var(--accent); }
+  .step { width: 44px; height: 44px; border: 0; background: none; font-size: 22px; cursor: pointer; color: var(--muted); }
+  .step:hover { background: var(--bg); color: var(--text); }
+  .stepper input {
+    width: 64px; height: 44px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+    text-align: center; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; -moz-appearance: textfield; background: none;
+  }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Order list */
+  .order-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 16px 22px; border-top: 1px solid var(--border); }
+  .group-head + .order-row { border-top: 0; }
+  .split { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .pill { font-size: 14px; padding: 3px 10px; border-radius: 999px; background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .qty { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.2; }
+  .qty small { display: block; font-size: 15px; font-weight: 500; color: var(--muted); }
+  .order-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 18px 22px; }
+  .hint { color: var(--muted); font-size: 15px; margin: 0 0 20px; }
+
+  .empty { padding: 48px 22px; text-align: center; color: var(--muted); }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: var(--text); color: #fff; padding: 12px 18px; border-radius: 10px; font-weight: 500; transition: .2s; z-index: 10; max-width: calc(100% - 32px);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.err { background: var(--danger); }
+
+  @media (max-width: 860px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .cols { display: none; }
+    .row { grid-template-columns: 1fr 1fr; row-gap: 12px; }
+    .row > .item { grid-column: 1 / -1; }
+    .row > .save { grid-column: 1 / -1; }
+    .row > .save .btn { width: 100%; }
+    .field-label { display: block; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 20px 16px 48px; }
+    h1 { font-size: 26px; }
+    .kpi { padding: 16px; }
+    .kpi .value { font-size: 28px; }
+    .group-head, .row, .order-row, .order-foot { padding-left: 16px; padding-right: 16px; }
+    .row { grid-template-columns: 1fr; }
+    .step { width: 48px; }
+    .stepper input { width: 100%; flex: 1; }
+    .stepper { display: flex; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Stock tracker</h1>
+      <p class="sub" id="sub">Loading stock from Supabase…</p>
+    </div>
+    <div class="head-actions">
+      <span class="status" id="status"></span>
+      <button class="btn" id="refresh" type="button">Refresh</button>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Summary"></section>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const SUPABASE_URL = 'https://svurfhnswvgunjhkwedx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_7KIqnHr1NEI7OTGN_91plg_v1UFUAhw';
+const CATEGORY_ORDER = ['Coffee', 'Dairy', 'Powders & syrups', 'Bakery', 'Packaging'];
+const ORDER_TAB = '__order';
+
+const state = { rows: [], outlets: [], tab: null, category: 'All', lowOnly: false, drafts: {}, saving: {} };
+const $ = sel => document.querySelector(sel);
+
+async function api(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', ...options.headers }
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Request failed (${res.status})`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+async function load() {
+  setStatus('Loading…');
+  try {
+    const data = await api('stock_counts?select=id,outlet,sku,qty_on_hand,reorder_level,counted_at,updated_at,items(item_name,unit,category)&order=counted_at.desc');
+    // Keep only the most recent count per outlet + item
+    const latest = new Map();
+    for (const r of data) {
+      const key = `${r.outlet}|${r.sku}`;
+      if (!latest.has(key)) latest.set(key, {
+        id: r.id, outlet: r.outlet, sku: r.sku, qty: r.qty_on_hand, reorder: r.reorder_level,
+        countedAt: r.counted_at, updatedAt: r.updated_at,
+        name: r.items.item_name, unit: r.items.unit, category: r.items.category
+      });
+    }
+    state.rows = [...latest.values()].sort((a, b) => a.sku.localeCompare(b.sku) || a.outlet.localeCompare(b.outlet));
+    state.outlets = [...new Set(state.rows.map(r => r.outlet))].sort();
+    if (!state.tab || (state.tab !== ORDER_TAB && !state.outlets.includes(state.tab))) state.tab = state.outlets[0] || ORDER_TAB;
+    state.drafts = {};
+    setStatus('');
+    render();
+  } catch (e) {
+    setStatus('Could not load data', true);
+    $('#sub').textContent = e.message;
+  }
+}
+
+async function saveRow(id) {
+  const row = state.rows.find(r => r.id === id);
+  const d = state.drafts[id];
+  if (!row || !d) return;
+  if (!valid(d.qty) || !valid(d.reorder)) return toast('Enter whole numbers of 0 or more', true);
+  state.saving[id] = true; render();
+  try {
+    const out = await api(`stock_counts?id=eq.${id}&select=id,qty_on_hand,reorder_level,updated_at`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({ qty_on_hand: d.qty, reorder_level: d.reorder })
+    });
+    if (!out || !out.length) throw new Error('Supabase did not accept the change');
+    Object.assign(row, { qty: out[0].qty_on_hand, reorder: out[0].reorder_level, updatedAt: out[0].updated_at });
+    delete state.drafts[id];
+    toast(`Saved ${row.name} · ${row.outlet}`);
+  } catch (e) {
+    toast(`Not saved: ${e.message}`, true);
+  } finally {
+    delete state.saving[id]; render();
+  }
+}
+
+const valid = n => Number.isInteger(n) && n >= 0;
+const current = r => state.drafts[r.id] || { qty: r.qty, reorder: r.reorder };
+const isLow = (qty, reorder) => qty <= reorder;
+const shortfall = (qty, reorder) => Math.max(reorder - qty, 0);
+const plural = (n, unit) => n === 1 ? unit : (/(x|s|ch|sh)$/.test(unit) ? unit + 'es' : unit + 's');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const catSort = (a, b) => (CATEGORY_ORDER.indexOf(a) + 1 || 99) - (CATEGORY_ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b);
+const fmtDate = s => new Date(s + 'T00:00:00').toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+
+function orderLines() {
+  const byItem = new Map();
+  for (const r of state.rows) {
+    const s = shortfall(r.qty, r.reorder);
+    if (!s) continue;
+    if (!byItem.has(r.sku)) byItem.set(r.sku, { sku: r.sku, name: r.name, unit: r.unit, category: r.category, total: 0, split: [] });
+    const line = byItem.get(r.sku);
+    line.total += s;
+    line.split.push({ outlet: r.outlet, qty: s });
+  }
+  return [...byItem.values()];
+}
+
+function render() {
+  const lowCount = state.rows.filter(r => isLow(r.qty, r.reorder)).length;
+  const lines = orderLines();
+  const units = lines.reduce((t, l) => t + l.total, 0);
+  const perOutlet = state.outlets.map(o => ({ o, n: state.rows.filter(r => r.outlet === o && isLow(r.qty, r.reorder)).length }));
+  const worst = perOutlet.reduce((a, b) => (b.n > a.n ? b : a), { o: '—', n: 0 });
+  const dates = [...new Set(state.rows.map(r => r.countedAt))].sort();
+  const lastEdit = state.rows.reduce((m, r) => (r.updatedAt > m ? r.updatedAt : m), '');
+
+  $('#sub').textContent = `${state.outlets.length} outlets · ${new Set(state.rows.map(r => r.sku)).size} items · counted ${dates.length ? fmtDate(dates[dates.length - 1]) : '—'}`;
+
+  $('#kpis').innerHTML = `
+    <div class="card kpi"><div class="label">Items low</div><div class="value accent">${lowCount}</div><div class="note">of ${state.rows.length} across all outlets</div></div>
+    <div class="card kpi"><div class="label">Units to order</div><div class="value">${units}</div><div class="note">${lines.length} products short</div></div>
+    <div class="card kpi"><div class="label">Most at risk</div><div class="value">${esc(worst.o)}</div><div class="note">${worst.n} items low</div></div>
+    <div class="card kpi"><div class="label">Last saved</div><div class="value" style="font-size:24px;padding-top:6px">${lastEdit ? new Date(lastEdit).toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit' }) : '—'}</div><div class="note">${lastEdit ? new Date(lastEdit).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' }) : ''}</div></div>`;
+
+  const tabs = [...perOutlet.map(p => ({ id: p.o, label: p.o, n: p.n })), { id: ORDER_TAB, label: 'Order from suppliers', n: lines.length }];
+  $('#tabs').innerHTML = tabs.map(t => `
+    <button class="tab" role="tab" type="button" data-tab="${esc(t.id)}" aria-selected="${t.id === state.tab}">
+      ${esc(t.label)} <span class="count ${t.n ? 'has-low' : ''}">${t.n}</span>
+    </button>`).join('');
+
+  $('#view').innerHTML = state.tab === ORDER_TAB ? renderOrder(lines, units) : renderOutlet(state.tab);
+}
+
+function renderOutlet(outlet) {
+  const rows = state.rows.filter(r => r.outlet === outlet);
+  const cats = [...new Set(rows.map(r => r.category))].sort(catSort);
+  if (state.category !== 'All' && !cats.includes(state.category)) state.category = 'All';
+
+  const toolbar = `
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="Category">
+        ${['All', ...cats].map(c => `<button class="chip" type="button" data-cat="${esc(c)}" aria-pressed="${c === state.category}">${esc(c)}</button>`).join('')}
+      </div>
+      <label class="toggle"><input type="checkbox" id="lowOnly" ${state.lowOnly ? 'checked' : ''}> Show low items only</label>
+    </div>`;
+
+  const groups = cats
+    .filter(c => state.category === 'All' || c === state.category)
+    .map(c => {
+      const items = rows.filter(r => r.category === c && (!state.lowOnly || isLow(current(r).qty, current(r).reorder)));
+      if (!items.length) return '';
+      const low = items.filter(r => isLow(current(r).qty, current(r).reorder)).length;
+      return `
+        <section class="card group">
+          <div class="group-head"><h2>${esc(c)}</h2><span class="meta">${low ? `${low} low` : 'All stocked'}</span></div>
+          <div class="cols"><span>Item</span><span>In stock</span><span>Reorder at</span><span></span></div>
+          ${items.map(renderRow).join('')}
+        </section>`;
+    }).join('');
+
+  return toolbar + (groups || `<div class="card empty">No low items in ${esc(outlet)}${state.category !== 'All' ? ` for ${esc(state.category)}` : ''}.</div>`);
+}
+
+function renderRow(r) {
+  const { qty, reorder } = current(r);
+  const dirty = !!state.drafts[r.id];
+  const low = isLow(qty, reorder);
+  const short = shortfall(qty, reorder);
+  const saving = !!state.saving[r.id];
+  const stepper = (field, val, label) => `
+    <div>
+      <div class="field-label">${label}</div>
+      <div class="stepper ${dirty && val !== r[field] ? 'dirty' : ''}">
+        <button class="step" type="button" data-id="${r.id}" data-field="${field}" data-delta="-1" aria-label="Decrease ${label.toLowerCase()} for ${esc(r.name)}">−</button>
+        <input type="number" min="0" step="1" inputmode="numeric" value="${val}" data-id="${r.id}" data-field="${field}" aria-label="${label} for ${esc(r.name)}">
+        <button class="step" type="button" data-id="${r.id}" data-field="${field}" data-delta="1" aria-label="Increase ${label.toLowerCase()} for ${esc(r.name)}">+</button>
+      </div>
+    </div>`;
+  return `
+    <div class="row ${low ? 'low' : ''}">
+      <div class="item">
+        <div class="name">${esc(r.name)} ${low ? '<span class="badge">Low</span>' : ''}</div>
+        <div class="detail">${esc(r.sku)} · per ${esc(r.unit)}${short ? ` · short by ${short}` : ''}</div>
+      </div>
+      ${stepper('qty', qty, 'In stock')}
+      ${stepper('reorder', reorder, 'Reorder at')}
+      <div class="save"><button class="btn primary" type="button" data-save="${r.id}" ${dirty && !saving ? '' : 'disabled'}>${saving ? 'Saving…' : 'Save'}</button></div>
+    </div>`;
+}
+
+function renderOrder(lines, units) {
+  if (!lines.length) return `<div class="card empty">Nothing to order. Every outlet is above its reorder level.</div>`;
+  const cats = [...new Set(lines.map(l => l.category))].sort(catSort);
+  return `
+    <p class="hint">Shortfall = reorder level minus stock on hand, totalled across all outlets. Items sitting exactly at their reorder level are marked Low but have nothing to order.</p>
+    ${cats.map(c => {
+      const ls = lines.filter(l => l.category === c);
+      return `
+        <section class="card group">
+          <div class="group-head"><h2>${esc(c)}</h2><span class="meta">${ls.length} ${ls.length === 1 ? 'product' : 'products'}</span></div>
+          ${ls.map(l => `
+            <div class="order-row">
+              <div>
+                <div class="name">${esc(l.name)}</div>
+                <div class="split">${l.split.map(s => `<span class="pill">${esc(s.outlet)} ${s.qty}</span>`).join('')}</div>
+              </div>
+              <div class="qty">${l.total}<small>${esc(plural(l.total, l.unit))}</small></div>
+            </div>`).join('')}
+        </section>`;
+    }).join('')}
+    <section class="card">
+      <div class="order-foot">
+        <div><strong style="font-size:20px">${units} units</strong> <span class="detail">across ${lines.length} products</span></div>
+        <button class="btn primary" type="button" id="copy">Copy order list</button>
+      </div>
+    </section>`;
+}
+
+function orderText() {
+  const lines = orderLines();
+  const cats = [...new Set(lines.map(l => l.category))].sort(catSort);
+  const today = new Date().toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+  const out = [`Supplier order – ${today}`, ''];
+  for (const c of cats) {
+    out.push(c.toUpperCase());
+    for (const l of lines.filter(x => x.category === c)) {
+      out.push(`- ${l.name}: ${l.total} ${plural(l.total, l.unit)} (${l.split.map(s => `${s.outlet} ${s.qty}`).join(', ')})`);
+    }
+    out.push('');
+  }
+  out.push(`Total: ${lines.reduce((t, l) => t + l.total, 0)} units across ${lines.length} products`);
+  return out.join('\n');
+}
+
+async function copyOrder() {
+  const text = orderText();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy'); ta.remove();
+    if (!ok) return toast('Copy failed – select the list and copy manually', true);
+  }
+  toast('Order list copied');
+}
+
+function setDraft(id, field, value) {
+  const row = state.rows.find(r => r.id === id);
+  const d = { ...current(row), [field]: value };
+  if (d.qty === row.qty && d.reorder === row.reorder) delete state.drafts[id];
+  else state.drafts[id] = d;
+}
+
+// Events (delegated, since the view re-renders)
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.tab) { state.tab = t.dataset.tab; state.category = 'All'; render(); return; }
+  if (t.dataset.cat) { state.category = t.dataset.cat; render(); return; }
+  if (t.dataset.delta) {
+    const id = +t.dataset.id, f = t.dataset.field;
+    const row = state.rows.find(r => r.id === id);
+    setDraft(id, f, Math.max(0, current(row)[f] + +t.dataset.delta));
+    render();
+    document.querySelector(`button[data-id="${id}"][data-field="${f}"][data-delta="${t.dataset.delta}"]`)?.focus();
+    return;
+  }
+  if (t.dataset.save) { saveRow(+t.dataset.save); return; }
+  if (t.id === 'copy') { copyOrder(); return; }
+  if (t.id === 'refresh') {
+    if (Object.keys(state.drafts).length && !confirm('Discard unsaved changes and reload?')) return;
+    load();
+  }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'lowOnly') { state.lowOnly = e.target.checked; render(); }
+});
+// Typed edits update the row in place (a full re-render on blur would swallow the Save click)
+document.addEventListener('input', e => {
+  if (!e.target.matches('.stepper input')) return;
+  const id = +e.target.dataset.id, field = e.target.dataset.field;
+  const v = parseInt(e.target.value, 10);
+  const row = state.rows.find(r => r.id === id);
+  setDraft(id, field, Number.isNaN(v) ? row[field] : Math.max(0, v));
+  const rowEl = e.target.closest('.row');
+  e.target.closest('.stepper').classList.toggle('dirty', current(row)[field] !== row[field]);
+  rowEl.querySelector('[data-save]').disabled = !state.drafts[id];
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('.stepper input')) {
+    const id = +e.target.dataset.id;
+    setDraft(id, e.target.dataset.field, Math.max(0, parseInt(e.target.value, 10) || 0));
+    saveRow(id);
+  }
+});
+window.addEventListener('beforeunload', e => { if (Object.keys(state.drafts).length) { e.preventDefault(); e.returnValue = ''; } });
+
+let toastTimer;
+function toast(msg, err) {
+  const el = $('#toast');
+  el.textContent = msg; el.className = `toast show${err ? ' err' : ''}`;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.className = 'toast'), 2600);
+}
+function setStatus(msg, err) { const el = $('#status'); el.textContent = msg; el.className = `status${err ? ' err' : ''}`; }
+
+load();
+</script>
+</body>
+</html>
