@@ -29,6 +29,7 @@
     --shadow: 0 1px 2px rgba(26,34,51,.04), 0 2px 8px rgba(26,34,51,.04);
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
@@ -313,7 +314,12 @@ const CATEGORY_ORDER = ['Coffee', 'Dairy', 'Powders & syrups', 'Bakery', 'Packag
 const ORDER_TAB = '__order';
 const USERS_TAB = '__users';
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Keep the session in sessionStorage: it survives a refresh but is cleared when the tab or browser closes,
+// so leaving the app signs the user out. Remove any session saved by the older localStorage version.
+try { Object.keys(localStorage).filter(k => /^sb-.*-auth-token/.test(k)).forEach(k => localStorage.removeItem(k)); } catch {}
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true }
+});
 const state = { me: null, users: [], rows: [], outlets: [], tab: null, category: 'All', lowOnly: false, drafts: {}, saving: {}, addingUser: false };
 const $ = sel => document.querySelector(sel);
 const toEmail = u => (u.includes('@') ? u : `${u}@${EMAIL_DOMAIN}`).trim().toLowerCase();
