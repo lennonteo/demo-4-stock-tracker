@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Café Stock Tracker</title>
 <meta name="description" content="Multi-outlet stock tracker with low-stock alerts and a combined supplier order list.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='13' fill='%23e8590c'/%3E%3Cpath d='M12 17h20v10a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8z' fill='%23fff'/%3E%3Cpath d='M32 20h2.5a4 4 0 0 1 0 8H32' stroke='%23fff' stroke-width='3' fill='none'/%3E%3Crect x='16' y='27' width='3' height='4' rx='1' fill='%23e8590c'/%3E%3Crect x='20.5' y='24' width='3' height='7' rx='1' fill='%23e8590c'/%3E%3Crect x='25' y='21' width='3' height='10' rx='1' fill='%23e8590c'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='13' fill='%232f7d5b'/%3E%3Cpath d='M12 17h20v10a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8z' fill='%23fff'/%3E%3Cpath d='M32 20h2.5a4 4 0 0 1 0 8H32' stroke='%23fff' stroke-width='3' fill='none'/%3E%3Crect x='16' y='27' width='3' height='4' rx='1' fill='%232f7d5b'/%3E%3Crect x='20.5' y='24' width='3' height='7' rx='1' fill='%232f7d5b'/%3E%3Crect x='25' y='21' width='3' height='10' rx='1' fill='%232f7d5b'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -18,6 +18,7 @@
     --muted: #697386;
     --faint: #a3acb9;
     --accent: #e8590c;
+    --brand: #2f7d5b;
     --accent-hover: #cc4d0a;
     --accent-soft: #fff1e8;
     --accent-line: #ffd4ba;
@@ -40,7 +41,7 @@
   /* Header */
   header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
   .brand { display: flex; align-items: center; gap: 16px; }
-  .logo { width: 60px; height: 60px; flex: none; border-radius: 16px; box-shadow: 0 2px 8px rgba(232,89,12,.25); }
+  .logo { width: 60px; height: 60px; flex: none; border-radius: 16px; box-shadow: 0 2px 8px rgba(47,125,91,.25); }
   h1 { font-size: 30px; line-height: 1.2; margin: 0 0 4px; font-weight: 700; letter-spacing: -.02em; }
   .sub { color: var(--muted); margin: 0; }
   .head-actions { display: flex; align-items: center; gap: 12px; }
@@ -169,13 +170,13 @@
   <header>
     <div class="brand">
       <svg class="logo" viewBox="0 0 48 48" role="img" aria-label="Stock tracker logo">
-        <rect width="48" height="48" rx="13" fill="var(--accent)"/>
+        <rect width="48" height="48" rx="13" fill="var(--brand)"/>
         <path d="M18.5 13.5c0-2 2-2.5 2-4.5M24.5 13.5c0-2 2-2.5 2-4.5" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none" opacity=".75"/>
         <path d="M12 17h20v10a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8z" fill="#fff"/>
         <path d="M32 20h2.5a4 4 0 0 1 0 8H32" stroke="#fff" stroke-width="3" fill="none"/>
-        <rect x="16" y="27" width="3" height="4" rx="1" fill="var(--accent)"/>
-        <rect x="20.5" y="24" width="3" height="7" rx="1" fill="var(--accent)"/>
-        <rect x="25" y="21" width="3" height="10" rx="1" fill="var(--accent)"/>
+        <rect x="16" y="27" width="3" height="4" rx="1" fill="var(--brand)"/>
+        <rect x="20.5" y="24" width="3" height="7" rx="1" fill="var(--brand)"/>
+        <rect x="25" y="21" width="3" height="10" rx="1" fill="var(--brand)"/>
       </svg>
       <div>
         <h1>Stock tracker</h1>
